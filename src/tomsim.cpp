@@ -24,6 +24,8 @@ Instr::Instr() {
     isStartCycle = 0;
     exStartCycle = 0;
     wbStartCycle = 0;
+
+    ready_flag = false;
 }
 //Custom Constructor
 Instr::Instr(int p, int op, int dest, int src1, int src2) {
@@ -41,10 +43,15 @@ Instr::Instr(int p, int op, int dest, int src1, int src2) {
     isStartCycle = 0;
     exStartCycle = 0;
     wbStartCycle = 0;
+
+    ready_flag = false;
 }
-//Set Tag
+//Set and Get Tag
 void Instr::setTag(int instrNum) {
     tag = instrNum;
+}
+int Instr::getTag() {
+    return tag;
 }
 //SET CYCLE WHEN STATE STARTS
 void Instr::setIFCycle(int cycle) {

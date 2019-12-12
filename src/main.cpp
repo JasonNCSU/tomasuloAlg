@@ -102,54 +102,97 @@ int main(int argc, char **argv) {
         tomSim.incrInstrCount();
     }
 
-    //schedule and dispatch queue
-    vector<Instr> scheduleQueue;
-    vector<Instr> dispatchQueue;
+    //schedule and dispatch and fakeROB queues
+    vector<Instr> fakeROB; //holds all of the instr, will be checked during ex and fakeretire
+    vector<Instr> executeQueue; //holds all instr during EX phase, determines when it's ready for WB
+    vector<Instr> scheduleQueue; //holds the instr during IS phase, determines when it's clear to go to EX
+    vector<Instr> dispatchQueue; //holds the instr during IF and ID phase, determines when it's clear to go to IS
+    //check matching tag for inside the ROB
+    int tempTag = 0;
     //only N from dispatch -> sched per cycle MAX
     int moved = 0;
     //# of instructions
     int instrVectorLength = instrVector.size();
     //loop variables
+    int k = 0;
     int i = 0;
     int j = 0;
-    while (j < instrVectorLength) {
+    while (j < instrVectorLength || !fakeROB.empty()) {
         //FakeRetire============================
 
 
         //Execute===============================
+        if (!executeQueue.empty()) {
+            for (i = 0; i < executeQueue.size(); i++) {
 
+            }
+        }
 
         //Issue=================================
 
 
         //Dispatch==============================
+        //First check that the dispatch queue is not empty and that the schedule queue is not full
         if (!dispatchQueue.empty() && scheduleQueue.size() != sched_queue_size) {
             moved = 0;
             for (i = 0; i < dispatchQueue.size(); i++) {
+                //once the queue is full or we have moved max allowed instr from dispatch to
+                //schedule queue, then we end the loop early
                 if (scheduleQueue.size() == sched_queue_size || moved >= n_peak_rate) {
                     break;
                 }
+                //change state to IS, set the cycle that the IS happened on, add to schedule queue
+                //take it away from dispatch queue
+                //need to update info in fakeROB as well
+                //break after we find the one instr that matches tags, no need to check the rest
                 if (dispatchQueue.at(i).getState() == 2) {
                     dispatchQueue.at(i).updateState();
                     dispatchQueue.at(i).setISCycle(tomSim.getCycleCount());
+
                     scheduleQueue.push_back(dispatchQueue.at(i));
                     dispatchQueue.erase(dispatchQueue.begin() + i);
+
                     i--;
                     moved++;
+
+                    tempTag = dispatchQueue.at(i).getTag();
+                    for (k = 0; k < fakeROB.size(); k++) {
+                        if (fakeROB.at(k).getTag() == tempTag) {
+                            fakeROB.at(k).updateState();
+                            fakeROB.at(k).setISCycle(tomSim.getCycleCount());
+                            break;
+                        }
+                    }
                 }
 
             }
         }
 
         //Fetch=================================
+        //if the dispatch queue is empty, no need to update any IF to ID
+        //need to update the fakeROB as well
+        //break after we find the one instr that matches tags, no need to check the rest
         if (!dispatchQueue.empty()) {
             for (i = 0; i < dispatchQueue.size(); i++) {
                 if (dispatchQueue.at(i).getState() == 1) {
                     dispatchQueue.at(i).updateState();
                     dispatchQueue.at(i).setIDCycle(tomSim.getCycleCount());
+                    tempTag = dispatchQueue.at(i).getTag();
+                    for (k = 0; k < fakeROB.size(); k++) {
+                        if (fakeROB.at(k).getTag() == tempTag) {
+                            fakeROB.at(k).updateState();
+                            fakeROB.at(k).setIDCycle(tomSim.getCycleCount());
+                            break;
+                        }
+                    }
                 }
             }
         }
+        //we can add up to N instr to the dispatch queue in the IF state.
+        //if we reach max size, break without changing the next instruction we are going to read
+        //we want to continue from this point next time we get back here
+        //we set the tag, set state to IF, set the IF cycle, as well as add the
+        //instr to dispatchQueue and the fakeROB
         for (i = 0; i < n_peak_rate; i++) {
             if ((dispatchQueue.size() == dispatch_size) || (j >= instrVectorLength)) {
                 break;
@@ -159,6 +202,7 @@ int main(int argc, char **argv) {
             instrVector.at(j).updateState();
             instrVector.at(j).setIFCycle(tomSim.getCycleCount());
             dispatchQueue.push_back(instrVector.at(j));
+            fakeROB.push_back(instrVector.at(j));
             j++;
         }
         tomSim.incrCycleCount();

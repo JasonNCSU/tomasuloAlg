@@ -29,12 +29,15 @@ private:
     int exStartCycle;
     int wbStartCycle;
 
+    bool ready_flag;
+
 public:
     //methods============================
     Instr(void);
     Instr(int p, int op, int dest, int src1, int src2);
 
     void setTag(int instrNum);
+    int getTag(void);
     void setIFCycle(int cycle);
     void setIDCycle(int cycle);
     void setISCycle(int cycle);
