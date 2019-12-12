@@ -4,6 +4,7 @@
 
 #include "tomsim.h"
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -145,8 +146,6 @@ void TomSim::instrReadIn(int p, int op, int dest, int src1, int src2) {
     dest_reg = dest;
     src1_reg = src1;
     src2_reg = src2;
-
-
 }
 //Increment Instruction Count
 void TomSim::incrInstrCount() {
@@ -171,5 +170,5 @@ void TomSim::print() {
     cout << "RESULTS" << endl;
     cout << " number of instructions = " << instr_num << endl;
     cout << " number of cycles       = " << cycle_num << endl;
-    cout << " IPC                    = " << ipc << endl;
+    cout << setprecision(2) << fixed << " IPC                    = " << ipc << endl;
 }
