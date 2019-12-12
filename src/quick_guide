@@ -1,0 +1,44 @@
+set tag to the instr_num.
+    Since this starts at 0 and only increases by 1 after this stage,
+    then we match the pdf requirements
+
+n - n_peak_rate instr are to be fetched at a time.
+    Then n_peak_rate fetched instr are changed to dispatch instr.
+    Then they're dispatched to the sched queue
+
+sched queue is of size s - sched_queue_size.
+    the sched queue is the same as reservation stations
+    in the sched queue, an instr is ready if the source operands are ready
+
+up to n - n_peak_rate ready instr can be issued per cycle.
+    priority given to oldest instructions
+
+when the instr is issued to a functional unit
+    remove it from sched queue
+
+there are n - n_peak_rate functional units.
+    the op_type/op_code dictates the latency of the instr in the functional unit
+    0 - 1 cyc, 1 - 2 cyc, 2 - 5 cyc.
+
+each functional unit is fully pipelined, therefore,
+    a new instr can begin execution on a FU every cycle
+
+more than N instr can complete in the same cycle because...
+    there are different execution latencies and fully pipelined FUs
+
+the same as having as many result buses as max number of instr,
+    that can complete in same cycle.
+    buses = common data buses or CDBs
+
+all instr that advance from FUs go to WB stage
+
+when instr completes, it tells the sched queue (to wake up dependent instr)
+    and the register file (to possibly update its state)
+
+to determine #cycles needed to run program, don't need actual register vals
+    register file initial state and instr opcodes are omitted bc this
+    we need microarch config, execution latencies, and register specifiers
+    (true - RAW, anti - WAR, and output - WAW dependencies)
+
+we don't maintain precise interrupts, so there's no reorder buffer
+    thus, instr update register file as soon as finished
