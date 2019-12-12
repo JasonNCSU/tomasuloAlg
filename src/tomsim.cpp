@@ -25,6 +25,8 @@ Instr::Instr() {
     exStartCycle = 0;
     wbStartCycle = 0;
 
+    exCycleCount = 0;
+
     ready_flag = false;
 }
 //Custom Constructor
@@ -44,30 +46,68 @@ Instr::Instr(int p, int op, int dest, int src1, int src2) {
     exStartCycle = 0;
     wbStartCycle = 0;
 
+    exCycleCount = 0;
+
     ready_flag = false;
 }
-//Set and Get Tag
+//Getters and Setters
 void Instr::setTag(int instrNum) {
     tag = instrNum;
 }
 int Instr::getTag() {
     return tag;
 }
-//SET CYCLE WHEN STATE STARTS
+void Instr::updateEXCurrCycle() {
+    exCycleCount++;
+}
+int Instr::getEXCurrCycle() {
+    return exCycleCount;
+}
+//SET and GET CYCLE WHEN STATE STARTS
 void Instr::setIFCycle(int cycle) {
     ifStartCycle = cycle;
+}
+int Instr::getIFCycle() {
+    return ifStartCycle;
 }
 void Instr::setIDCycle(int cycle) {
     idStartCycle = cycle;
 }
+int Instr::getIDCycle() {
+    return idStartCycle;
+}
 void Instr::setISCycle(int cycle) {
     isStartCycle = cycle;
 }
+int Instr::getISCycle() {
+    return isStartCycle;
+}
 void Instr::setEXCycle(int cycle) {
     idStartCycle = cycle;
+
+    switch (op_code) {
+        case 0:
+            exCycleCount = 1;
+            break;
+        case 1:
+            exCycleCount = 2;
+            break;
+        case 2:
+            exCycleCount = 5;
+            break;
+        default:
+            exCycleCount = 0;
+            break;
+    }
+}
+int Instr::getEXCycle() {
+    return exStartCycle;
 }
 void Instr::setWBCycle(int cycle) {
     wbStartCycle = cycle;
+}
+int Instr::getWBCycle() {
+    return wbStartCycle;
 }
 //SET CYCLE WHEN STATE STARTS
 //Next State
@@ -91,6 +131,9 @@ void Instr::updateState() {
         case 5:
             state = INVALID;
             break;
+        default:
+            state = INVALID;
+            break;
     }
 }
 //Get State
@@ -111,6 +154,7 @@ void Instr::print() {
             exLength = 5;
             break;
         default:
+            exLength = 0;
             break;
     }
 
@@ -123,6 +167,9 @@ void Instr::print() {
     cout << " EX{" << exStartCycle << "," << exLength << "}";
     cout << " WB{" << wbStartCycle << "," << 1 << "}" << endl;
 }
+
+
+
 
 //Default Constructor
 TomSim::TomSim() {
@@ -138,7 +185,7 @@ TomSim::TomSim() {
     src2_reg = 0;
 }
 //Custom Constructor
-TomSim::TomSim(int s, int n) {
+TomSim::TomSim(unsigned int s, unsigned int n) {
     sched_queue_size = s;
     n_peak_rate = n;
     instr_num = 0;

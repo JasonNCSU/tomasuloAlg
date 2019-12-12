@@ -11,31 +11,28 @@
 #include <vector>
 #include "tomsim.h"
 
-#define MAX_INSTR 100000
-
-
 using namespace std;
 
 int main(int argc, char **argv) {
 
     //declare values for program start
-    int sched_queue_size = 0;
-    int n_peak_rate = 0;
-    int blocksize = 0;
-    int l1_size = 0;
-    int l1_assoc = 0;
-    int l2_size = 0;
-    int l2_assoc = 0;
+    unsigned int sched_queue_size = 0;
+    unsigned int n_peak_rate = 0;
+    //int blocksize = 0;
+    //int l1_size = 0;
+    //int l1_assoc = 0;
+    //int l2_size = 0;
+    //int l2_assoc = 0;
     char *trace_file = nullptr;
 
     //initialize values from program start
     sched_queue_size = strtol(argv[1], nullptr, 10);
     n_peak_rate = strtol(argv[2], nullptr, 10);
-    blocksize = strtol(argv[3], nullptr, 10);
-    l1_size = strtol(argv[4], nullptr, 10);
-    l1_assoc = strtol(argv[5], nullptr, 10);
-    l2_size = strtol(argv[6], nullptr, 10);
-    l2_assoc = strtol(argv[7], nullptr, 10);
+    //blocksize = strtol(argv[3], nullptr, 10);
+    //l1_size = strtol(argv[4], nullptr, 10);
+    //l1_assoc = strtol(argv[5], nullptr, 10);
+    //l2_size = strtol(argv[6], nullptr, 10);
+    //l2_assoc = strtol(argv[7], nullptr, 10);
     trace_file = argv[8];
 
     //create object with queue size and peak rate
@@ -43,7 +40,7 @@ int main(int argc, char **argv) {
     vector<Instr> instrVector;
 
     //dispatch queue is fetch + dispatch, thus 2N
-    int dispatch_size = 2*n_peak_rate;
+    unsigned int dispatch_size = 2*n_peak_rate;
 
     //read in file
     int pc = 0;
@@ -51,7 +48,7 @@ int main(int argc, char **argv) {
     int dest_reg = 0;
     int src1_reg = 0;
     int src2_reg = 0;
-    int mem_addr = 0;
+    //int mem_addr = 0;
 
     //variables for reading in file
     string data_segment;
@@ -88,7 +85,7 @@ int main(int argc, char **argv) {
                     data_count++;
                     break;
                 case 5:
-                    mem_addr = strtoul(temp.c_str(), nullptr, 16);
+                    //mem_addr = strtoul(temp.c_str(), nullptr, 16);
                     data_count++;
                     break;
                 case 6:
@@ -103,6 +100,7 @@ int main(int argc, char **argv) {
     }
 
     //schedule and dispatch and fakeROB queues
+
     vector<Instr> fakeROB; //holds all of the instr, will be checked during ex and fakeretire
     vector<Instr> executeQueue; //holds all instr during EX phase, determines when it's ready for WB
     vector<Instr> scheduleQueue; //holds the instr during IS phase, determines when it's clear to go to EX
@@ -110,26 +108,73 @@ int main(int argc, char **argv) {
     //check matching tag for inside the ROB
     int tempTag = 0;
     //only N from dispatch -> sched per cycle MAX
-    int moved = 0;
+    unsigned int moved = 0;
     //# of instructions
-    int instrVectorLength = instrVector.size();
+    unsigned int instrVectorLength = instrVector.size();
     //loop variables
-    int k = 0;
-    int i = 0;
-    int j = 0;
+    unsigned long k = 0;
+    unsigned long i = 0;
+    unsigned int j = 0;
     while (j < instrVectorLength || !fakeROB.empty()) {
         //FakeRetire============================
-
+        if (!fakeROB.empty()) {
+            //copy over final details from fakeROB back to the original array
+            //this is for the final print statement that occurs after this while loop
+            for (i = 0; i < fakeROB.size(); i++) {
+                if (fakeROB.at(i).getState() == 5) {
+                    tempTag = fakeROB.at(i).getTag();
+                    instrVector.at(tempTag).setIFCycle(fakeROB.at(i).getIFCycle());
+                    instrVector.at(tempTag).setIDCycle(fakeROB.at(i).getIDCycle());
+                    instrVector.at(tempTag).setISCycle(fakeROB.at(i).getISCycle());
+                    instrVector.at(tempTag).setEXCycle(fakeROB.at(i).getEXCycle());
+                    instrVector.at(tempTag).setWBCycle(fakeROB.at(i).getWBCycle());
+                    fakeROB.erase(fakeROB.begin() + i);
+                }
+            }
+        }
 
         //Execute===============================
         if (!executeQueue.empty()) {
             for (i = 0; i < executeQueue.size(); i++) {
+                //update current execution cycle number by doing cycle - 1
+                //if we are at cycle 1, we need to change the state to WB
+                //we also need to update the register file's ready flag
+                //also remove the instruction from executeQueue vector as it's done
+                //need to update info in fakeROB as well
+                //break after we find the one instr that matches tags, no need to check the rest
+                if (executeQueue.at(i).getEXCurrCycle() == 1) {
+                    //TODO: update register file ready flag
+                    tempTag = executeQueue.at(i).getTag();
+                    for (k = 0; k < fakeROB.size(); k++) {
+                        if (fakeROB.at(k).getTag() == tempTag) {
+                            fakeROB.at(k).updateEXCurrCycle();
+                            fakeROB.at(k).updateState();
+                            fakeROB.at(k).setWBCycle(tomSim.getCycleCount());
+                            break;
+                        }
+                    }
 
+                    executeQueue.erase(executeQueue.begin() + i);
+                    i--;
+                } else {
+                    executeQueue.at(i).updateEXCurrCycle();
+
+                    tempTag = executeQueue.at(i).getTag();
+                    for (k = 0; k < fakeROB.size(); k++) {
+                        if (fakeROB.at(k).getTag() == tempTag) {
+                            fakeROB.at(k).updateEXCurrCycle();
+                            break;
+                        }
+                    }
+                }
             }
         }
 
         //Issue=================================
-
+        //TODO Move things from scheduleQueue to executeQueue when the register-
+        //TODO file says that the source registers are ready to go.
+        //TODO We also need to updateState on the ROB
+        //
 
         //Dispatch==============================
         //First check that the dispatch queue is not empty and that the schedule queue is not full

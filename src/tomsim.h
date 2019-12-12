@@ -29,6 +29,8 @@ private:
     int exStartCycle;
     int wbStartCycle;
 
+    int exCycleCount;
+
     bool ready_flag;
 
 public:
@@ -38,11 +40,20 @@ public:
 
     void setTag(int instrNum);
     int getTag(void);
+
     void setIFCycle(int cycle);
+    int getIFCycle(void);
     void setIDCycle(int cycle);
+    int getIDCycle(void);
     void setISCycle(int cycle);
+    int getISCycle(void);
     void setEXCycle(int cycle);
+    int getEXCycle(void);
     void setWBCycle(int cycle);
+    int getWBCycle(void);
+
+    int getEXCurrCycle(void);
+    void updateEXCurrCycle(void);
 
     void updateState(void);
     pipeline_t getState(void);
@@ -57,8 +68,8 @@ private:
 
 
     //variables============================
-    int sched_queue_size;
-    int n_peak_rate;
+    unsigned int sched_queue_size;
+    unsigned int n_peak_rate;
     int instr_num;
     int cycle_num;
 
@@ -71,7 +82,7 @@ private:
 public:
     //methods============================
     TomSim(void);
-    TomSim(int sched_queue_size, int n_peak_rate);
+    TomSim(unsigned int s, unsigned int n);
 
     void instrReadIn(int p, int op, int dest, int src1, int src2);
     void incrInstrCount(void);
