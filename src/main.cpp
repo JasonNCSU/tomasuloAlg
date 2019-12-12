@@ -102,33 +102,63 @@ int main(int argc, char **argv) {
         tomSim.incrInstrCount();
     }
 
-    //dispatch queue
+    //schedule and dispatch queue
+    vector<Instr> scheduleQueue;
     vector<Instr> dispatchQueue;
+    //only N from dispatch -> sched per cycle MAX
+    int moved = 0;
     //# of instructions
     int instrVectorLength = instrVector.size();
     //loop variables
     int i = 0;
     int j = 0;
     while (j < instrVectorLength) {
-        //FakeRetire();
-
-        //Execute();
-
-        //Issue();
-
-        //Dispatch
+        //FakeRetire============================
 
 
-        //Fetch
+        //Execute===============================
+
+
+        //Issue=================================
+
+
+        //Dispatch==============================
+        if (!dispatchQueue.empty() && scheduleQueue.size() != sched_queue_size) {
+            moved = 0;
+            for (i = 0; i < dispatchQueue.size(); i++) {
+                if (scheduleQueue.size() == sched_queue_size || moved >= n_peak_rate) {
+                    break;
+                }
+                if (dispatchQueue.at(i).getState() == 2) {
+                    dispatchQueue.at(i).updateState();
+                    dispatchQueue.at(i).setISCycle(tomSim.getCycleCount());
+                    scheduleQueue.push_back(dispatchQueue.at(i));
+                    dispatchQueue.erase(dispatchQueue.begin() + i);
+                    i--;
+                    moved++;
+                }
+
+            }
+        }
+
+        //Fetch=================================
+        if (!dispatchQueue.empty()) {
+            for (i = 0; i < dispatchQueue.size(); i++) {
+                if (dispatchQueue.at(i).getState() == 1) {
+                    dispatchQueue.at(i).updateState();
+                    dispatchQueue.at(i).setIDCycle(tomSim.getCycleCount());
+                }
+            }
+        }
         for (i = 0; i < n_peak_rate; i++) {
             if ((dispatchQueue.size() == dispatch_size) || (j >= instrVectorLength)) {
                 break;
             }
 
-            //dispatchQueue.push_back(instrVector.at(j));
             instrVector.at(j).setTag(j);
             instrVector.at(j).updateState();
             instrVector.at(j).setIFCycle(tomSim.getCycleCount());
+            dispatchQueue.push_back(instrVector.at(j));
             j++;
         }
         tomSim.incrCycleCount();

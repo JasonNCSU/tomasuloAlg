@@ -86,6 +86,10 @@ void Instr::updateState() {
             break;
     }
 }
+//Get State
+pipeline_t Instr::getState() {
+    return state;
+}
 //Print Instruction Specific Info
 void Instr::print() {
     int exLength = 0;

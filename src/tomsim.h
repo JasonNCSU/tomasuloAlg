@@ -42,6 +42,7 @@ public:
     void setWBCycle(int cycle);
 
     void updateState(void);
+    pipeline_t getState(void);
 
     void print(void);
 
