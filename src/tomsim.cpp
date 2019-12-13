@@ -9,6 +9,17 @@
 using namespace std;
 
 //Default Constructor
+RegFile::RegFile() {
+
+    ready_flag = false;
+}
+void RegFile::setFlag(bool f) {
+    ready_flag = f;
+}
+
+
+
+//Default Constructor
 Instr::Instr() {
     pc = 0;
     op_code = 0;
@@ -26,8 +37,6 @@ Instr::Instr() {
     wbStartCycle = 0;
 
     exCycleCount = 0;
-
-    ready_flag = false;
 }
 //Custom Constructor
 Instr::Instr(int p, int op, int dest, int src1, int src2) {
@@ -47,15 +56,22 @@ Instr::Instr(int p, int op, int dest, int src1, int src2) {
     wbStartCycle = 0;
 
     exCycleCount = 0;
-
-    ready_flag = false;
 }
 //Getters and Setters
-void Instr::setTag(int instrNum) {
+void Instr::setTag(unsigned int instrNum) {
     tag = instrNum;
 }
 int Instr::getTag() {
     return tag;
+}
+int Instr::getDestReg(void) {
+    return dest_reg;
+}
+int Instr::getSrc1Reg(void) {
+    return src1_reg;
+}
+int Instr::getSrc2Reg(void) {
+    return src2_reg;
 }
 void Instr::updateEXCurrCycle() {
     exCycleCount++;

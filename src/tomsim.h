@@ -8,6 +8,22 @@
 //pipeline stages
 typedef enum {INVALID, IF, ID, IS, EX, WB} pipeline_t;
 
+class RegFile {
+private:
+    //methods============================
+
+
+    //variables============================
+    bool ready_flag;
+    int reg_name;
+
+public:
+    //methods============================
+    RegFile(void);
+    void setFlag(bool f);
+
+    //variables============================
+};
 class Instr {
 private:
     //methods============================
@@ -22,7 +38,7 @@ private:
 
     pipeline_t state;
 
-    int tag;
+    unsigned int tag;
     int ifStartCycle;
     int idStartCycle;
     int isStartCycle;
@@ -31,15 +47,16 @@ private:
 
     int exCycleCount;
 
-    bool ready_flag;
-
 public:
     //methods============================
     Instr(void);
     Instr(int p, int op, int dest, int src1, int src2);
 
-    void setTag(int instrNum);
+    void setTag(unsigned int instrNum);
     int getTag(void);
+    int getDestReg(void);
+    int getSrc1Reg(void);
+    int getSrc2Reg(void);
 
     void setIFCycle(int cycle);
     int getIFCycle(void);

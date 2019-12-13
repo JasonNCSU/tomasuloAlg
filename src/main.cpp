@@ -50,6 +50,9 @@ int main(int argc, char **argv) {
     int src2_reg = 0;
     //int mem_addr = 0;
 
+    //flag for going back 1 after erasing value in vector
+    bool erased = false;
+
     //variables for reading in file
     string data_segment;
     string temp;
@@ -100,7 +103,7 @@ int main(int argc, char **argv) {
     }
 
     //schedule and dispatch and fakeROB queues
-
+    RegFile regFile [128];
     vector<Instr> fakeROB; //holds all of the instr, will be checked during ex and fakeretire
     vector<Instr> executeQueue; //holds all instr during EX phase, determines when it's ready for WB
     vector<Instr> scheduleQueue; //holds the instr during IS phase, determines when it's clear to go to EX
@@ -121,6 +124,10 @@ int main(int argc, char **argv) {
             //copy over final details from fakeROB back to the original array
             //this is for the final print statement that occurs after this while loop
             for (i = 0; i < fakeROB.size(); i++) {
+                if (erased) {
+                    erased = false;
+                    i--;
+                }
                 if (fakeROB.at(i).getState() == 5) {
                     tempTag = fakeROB.at(i).getTag();
                     instrVector.at(tempTag).setIFCycle(fakeROB.at(i).getIFCycle());
@@ -129,6 +136,7 @@ int main(int argc, char **argv) {
                     instrVector.at(tempTag).setEXCycle(fakeROB.at(i).getEXCycle());
                     instrVector.at(tempTag).setWBCycle(fakeROB.at(i).getWBCycle());
                     fakeROB.erase(fakeROB.begin() + i);
+                    erased = true;
                 }
             }
         }
@@ -136,6 +144,10 @@ int main(int argc, char **argv) {
         //Execute===============================
         if (!executeQueue.empty()) {
             for (i = 0; i < executeQueue.size(); i++) {
+                if (erased) {
+                    erased = false;
+                    i--;
+                }
                 //update current execution cycle number by doing cycle - 1
                 //if we are at cycle 1, we need to change the state to WB
                 //we also need to update the register file's ready flag
@@ -143,7 +155,9 @@ int main(int argc, char **argv) {
                 //need to update info in fakeROB as well
                 //break after we find the one instr that matches tags, no need to check the rest
                 if (executeQueue.at(i).getEXCurrCycle() == 1) {
-                    //TODO: update register file ready flag
+                    //update register file ready flag
+                    regFile[executeQueue.at(i).getDestReg()].setFlag(true);
+
                     tempTag = executeQueue.at(i).getTag();
                     for (k = 0; k < fakeROB.size(); k++) {
                         if (fakeROB.at(k).getTag() == tempTag) {
@@ -155,7 +169,7 @@ int main(int argc, char **argv) {
                     }
 
                     executeQueue.erase(executeQueue.begin() + i);
-                    i--;
+                    erased = true;
                 } else {
                     executeQueue.at(i).updateEXCurrCycle();
 
@@ -181,6 +195,10 @@ int main(int argc, char **argv) {
         if (!dispatchQueue.empty() && scheduleQueue.size() != sched_queue_size) {
             moved = 0;
             for (i = 0; i < dispatchQueue.size(); i++) {
+                if (erased) {
+                    erased = false;
+                    i--;
+                }
                 //once the queue is full or we have moved max allowed instr from dispatch to
                 //schedule queue, then we end the loop early
                 if (scheduleQueue.size() == sched_queue_size || moved >= n_peak_rate) {
@@ -195,10 +213,6 @@ int main(int argc, char **argv) {
                     dispatchQueue.at(i).setISCycle(tomSim.getCycleCount());
 
                     scheduleQueue.push_back(dispatchQueue.at(i));
-                    dispatchQueue.erase(dispatchQueue.begin() + i);
-
-                    i--;
-                    moved++;
 
                     tempTag = dispatchQueue.at(i).getTag();
                     for (k = 0; k < fakeROB.size(); k++) {
@@ -208,6 +222,10 @@ int main(int argc, char **argv) {
                             break;
                         }
                     }
+
+                    dispatchQueue.erase(dispatchQueue.begin() + i);
+                    erased = true;
+                    moved++;
                 }
 
             }
